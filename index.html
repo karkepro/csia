@@ -1,89 +1,256 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
-
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/10.13.1/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/10.13.1/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/10.13.1/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/10.13.1/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/10.13.1/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/10.13.1/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/10.13.1/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/10.13.1/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/10.13.1/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/10.13.1/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
-
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Q&A</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        .hidden {
+            display: none;
+        }
+        .question {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .question-header button {
+            margin-left: 10px;
+        }
+        .comment {
+            margin-left: 20px;
+            font-style: italic;
+        }
     </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
+</head>
+<body>
+    <div class="container">
+        <h1>Classroom Q&A</h1>
+
+        <!-- User Authentication -->
+        <div id="auth">
+            <h2>User Login</h2>
+            <form id="loginForm">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <h2>Create Account</h2>
+            <form id="createAccountForm">
+                <input type="text" id="newUsername" placeholder="Username" required>
+                <input type="password" id="newPassword" placeholder="Password" required>
+                <button type="submit">Create Account</button>
+            </form>
+        </div>
+
+        <!-- Classroom Management -->
+        <div id="classroom-management" class="hidden">
+            <h2>Create or Join a Classroom</h2>
+            <div>
+                <h3>Create Classroom</h3>
+                <button onclick="createClassroom()">Create Classroom</button>
+                <div id="classCode" class="hidden">
+                    <p>Class Code: <span id="classCodeValue"></span></p>
+                </div>
+            </div>
+            <div>
+                <h3>Join Classroom</h3>
+                <input type="text" id="joinClassCode" placeholder="Enter Class Code">
+                <button onclick="joinClassroom()">Join Classroom</button>
+            </div>
+        </div>
+
+        <!-- Add Question -->
+        <div id="add-question" class="hidden">
+            <button onclick="goBack()">Back</button>
+            <h2>Add a Question</h2>
+            <input type="text" id="new-question" placeholder="Type your question here">
+            <button onclick="addQuestion()">Add Question</button>
+        </div>
+
+        <!-- Question Queue -->
+        <div id="question-queue" class="hidden">
+            <h2>Question Queue</h2>
+            <!-- Questions will be dynamically added here -->
+        </div>
     </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
 
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+        let users = [];
+        let loggedInUser = null;
+        let classrooms = [];
+        let currentClassroom = null;
 
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (authenticateUser(username, password)) {
+                loggedInUser = username;
+                showClassroomManagement();
+            } else {
+                alert('Invalid username or password');
+            }
+        });
+
+        document.getElementById('createAccountForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            if (createUser(username, password)) {
+                alert('Account created successfully');
+            } else {
+                alert('Username already exists');
+            }
+        });
+
+        function createUser(username, password) {
+            if (users.some(user => user.username === username)) {
+                return false;
+            }
+            users.push({ username, password });
+            return true;
         }
-      });
+
+        function authenticateUser(username, password) {
+            return users.some(user => user.username === username && user.password === password);
+        }
+
+        function showClassroomManagement() {
+            document.getElementById('auth').classList.add('hidden');
+            document.getElementById('classroom-management').classList.remove('hidden');
+        }
+
+        function createClassroom() {
+            const classCode = Math.random().toString(36).substr(2, 6).toUpperCase();
+            const classroom = {
+                classCode,
+                questions: []
+            };
+            classrooms.push(classroom);
+            currentClassroom = classroom;
+            document.getElementById('classCodeValue').textContent = classCode;
+            document.getElementById('classCode').classList.remove('hidden');
+            showQuestionSection();
+        }
+
+        function joinClassroom() {
+            const classCode = document.getElementById('joinClassCode').value.toUpperCase();
+            const classroom = classrooms.find(c => c.classCode === classCode);
+            if (classroom) {
+                currentClassroom = classroom;
+                showQuestionSection();
+            } else {
+                alert('Invalid class code');
+            }
+        }
+
+        function goBack() {
+            document.getElementById('add-question').classList.add('hidden');
+            document.getElementById('question-queue').classList.add('hidden');
+            document.getElementById('classroom-management').classList.remove('hidden');
+            currentClassroom = null;
+        }
+
+        function showQuestionSection() {
+            document.getElementById('classroom-management').classList.add('hidden');
+            document.getElementById('add-question').classList.remove('hidden');
+            document.getElementById('question-queue').classList.remove('hidden');
+            renderQuestions();
+        }
+
+        function addQuestion() {
+            const questionText = document.getElementById('new-question').value;
+            if (questionText) {
+                const question = {
+                    text: questionText,
+                    comments: [],
+                    upvotes: 0,
+                    askedBy: loggedInUser
+                };
+                currentClassroom.questions.push(question);
+                document.getElementById('new-question').value = '';
+                renderQuestions();
+            }
+        }
+
+        function removeQuestion(index) {
+            currentClassroom.questions.splice(index, 1);
+            renderQuestions();
+        }
+
+        function addComment(index) {
+            const comment = prompt('Enter your comment:');
+            if (comment) {
+                currentClassroom.questions[index].comments.push(comment);
+                renderQuestions();
+            }
+        }
+
+        function upvoteQuestion(index) {
+            currentClassroom.questions[index].upvotes += 1;
+            renderQuestions();
+        }
+
+        function renderQuestions() {
+            const questionQueue = document.getElementById('question-queue');
+            questionQueue.innerHTML = '';
+
+            currentClassroom.questions.sort((a, b) => b.upvotes - a.upvotes);
+
+            currentClassroom.questions.forEach((question, index) => {
+                const questionElement = document.createElement('div');
+                questionElement.className = 'question';
+
+                const questionHeader = document.createElement('div');
+                questionHeader.className = 'question-header';
+
+                const questionText = document.createElement('span');
+                questionText.textContent = `${question.text} (Asked by: ${question.askedBy})`;
+
+                const upvoteButton = document.createElement('button');
+                upvoteButton.textContent = `Upvote (${question.upvotes})`;
+                upvoteButton.onclick = () => upvoteQuestion(index);
+
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'Remove';
+                removeButton.onclick = () => removeQuestion(index);
+
+                const commentButton = document.createElement('button');
+                commentButton.textContent = 'Comment';
+                commentButton.onclick = () => addComment(index);
+
+                questionHeader.appendChild(questionText);
+                questionHeader.appendChild(upvoteButton);
+                questionHeader.appendChild(commentButton);
+                questionHeader.appendChild(removeButton);
+
+                questionElement.appendChild(questionHeader);
+
+                question.comments.forEach(comment => {
+                    const commentElement = document.createElement('div');
+                    commentElement.className = 'comment';
+                    commentElement.textContent = comment;
+                    questionElement.appendChild(commentElement);
+                });
+
+                questionQueue.appendChild(questionElement);
+            });
+        }
     </script>
-  </body>
+</body>
 </html>
