@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Q&A</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        .hidden {
+            display: none;
+        }
+        .question {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .question-header button {
+            margin-left: 10px;
+        }
+        .comment {
+            margin-left: 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Classroom Q&A</h1>
+
+        <!-- User Authentication -->
+        <div id="auth">
+            <h2>User Login</h2>
+            <form id="loginForm">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <h2>Create Account</h2>
+            <form id="createAccountForm">
+                <input type="text" id="newUsername" placeholder="Username" required>
+                <input type="password" id="newPassword" placeholder="Password" required>
+                <button type="submit">Create Account</button>
+            </form>
+        </div>
+
+        <!-- Classroom Management -->
+        <div id="classroom-management" class="hidden">
+            <h2>Create or Join a Classroom</h2>
+            <div>
+                <h3>Create Classroom</h3>
+                <button onclick="createClassroom()">Create Classroom</button>
+                <div id="classCode" class="hidden">
+                    <p>Class Code: <span id="classCodeValue"></span></p>
+                </div>
+            </div>
+            <div>
+                <h3>Join Classroom</h3>
+                <input type="text" id="joinClassCode" placeholder="Enter Class Code">
+                <button onclick="joinClassroom()">Join Classroom</button>
+            </div>
+        </div>
+
+        <!-- Add Question -->
+        <div id="add-question" class="hidden">
+            <button onclick="goBack()">Back</button>
+            <h2>Add a Question</h2>
+            <input type="text" id="new-question" placeholder="Type your question here">
+            <button onclick="addQuestion()">Add Question</button>
+        </div>
+
+        <!-- Question Queue -->
+        <div id="question-queue" class="hidden">
+            <h2>Question Queue</h2>
+            <!-- Questions will be dynamically added here -->
+        </div>
+    </div>
+
+    <script>
+        let users = [];
+        let loggedInUser = null;
+        let classrooms = [];
+        let currentClassroom = null;
+
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (authenticateUser(username, password)) {
+                loggedInUser = username;
+                showClassroomManagement();
+            } else {
+                alert('Invalid username or password');
+            }
+        });
+
+        document.getElementById('createAccountForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            if (createUser(username, password)) {
+                alert('Account created successfully');
+            } else {
+                alert('Username already exists');
+            }
+        });
+
+        function createUser(username, password) {
+            if (users.some(user => user.username === username)) {
+                return false;
+            }
+            users.push({ username, password });
+            return true;
+        }
+
+        function authenticateUser(username, password) {
+            return users.some(user => user.username === username && user.password === password);
+        }
+
+        function showClassroomManagement() {
+            document.getElementById('auth').classList.add('hidden');
+            document.getElementById('classroom-management').classList.remove('hidden');
+        }
+
+        function createClassroom() {
+            const classCode = Math.random().toString(36).substr(2, 6).toUpperCase();
+            const classroom = {
+                classCode,
+                questions: []
+            };
+            classrooms.push(classroom);
+            currentClassroom = classroom;
+            document.getElementById('classCodeValue').textContent = classCode;
+            document.getElementById('classCode').classList.remove('hidden');
+            showQuestionSection();
+        }
+
+        function joinClassroom() {
+            const classCode = document.getElementById('joinClassCode').value.toUpperCase();
+            const classroom = classrooms.find(c => c.classCode === classCode);
+            if (classroom) {
+                currentClassroom = classroom;
+                showQuestionSection();
+            } else {
+                alert('Invalid class code');
+            }
+        }
+
+        function goBack() {
+            document.getElementById('add-question').classList.add('hidden');
+            document.getElementById('question-queue').classList.add('hidden');
+            document.getElementById('classroom-management').classList.remove('hidden');
+            currentClassroom = null;
+        }
+
+        function showQuestionSection() {
+            document.getElementById('classroom-management').classList.add('hidden');
+            document.getElementById('add-question').classList.remove('hidden');
+            document.getElementById('question-queue').classList.remove('hidden');
+            renderQuestions();
+        }
+
+        function addQuestion() {
+            const questionText = document.getElementById('new-question').value;
+            if (questionText) {
+                const question = {
+                    text: questionText,
+                    comments: [],
+                    upvotes: 0,
+                    askedBy: loggedInUser
+                };
+                currentClassroom.questions.push(question);
+                document.getElementById('new-question').value = '';
+                renderQuestions();
+            }
+        }
+
+        function removeQuestion(index) {
+            currentClassroom.questions.splice(index, 1);
+            renderQuestions();
+        }
+
+        function addComment(index) {
+            const comment = prompt('Enter your comment:');
+            if (comment) {
+                currentClassroom.questions[index].comments.push(comment);
+                renderQuestions();
+            }
+        }
+
+        function upvoteQuestion(index) {
+            currentClassroom.questions[index].upvotes += 1;
+            renderQuestions();
+        }
+
+        function renderQuestions() {
+            const questionQueue = document.getElementById('question-queue');
+            questionQueue.innerHTML = '';
+
+            currentClassroom.questions.sort((a, b) => b.upvotes - a.upvotes);
+
+            currentClassroom.questions.forEach((question, index) => {
+                const questionElement = document.createElement('div');
+                questionElement.className = 'question';
+
+                const questionHeader = document.createElement('div');
+                questionHeader.className = 'question-header';
+
+                const questionText = document.createElement('span');
+                questionText.textContent = `${question.text} (Asked by: ${question.askedBy})`;
+
+                const upvoteButton = document.createElement('button');
+                upvoteButton.textContent = `Upvote (${question.upvotes})`;
+                upvoteButton.onclick = () => upvoteQuestion(index);
+
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'Remove';
+                removeButton.onclick = () => removeQuestion(index);
+
+                const commentButton = document.createElement('button');
+                commentButton.textContent = 'Comment';
+                commentButton.onclick = () => addComment(index);
+
+                questionHeader.appendChild(questionText);
+                questionHeader.appendChild(upvoteButton);
+                questionHeader.appendChild(commentButton);
+                questionHeader.appendChild(removeButton);
+
+                questionElement.appendChild(questionHeader);
+
+                question.comments.forEach(comment => {
+                    const commentElement = document.createElement('div');
+                    commentElement.className = 'comment';
+                    commentElement.textContent = comment;
+                    questionElement.appendChild(commentElement);
+                });
+
+                questionQueue.appendChild(questionElement);
+            });
+        }
+    </script>
+</body>
+</html>
